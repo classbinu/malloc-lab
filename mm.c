@@ -64,10 +64,11 @@ team_t team = {
 #define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 
 static void *heap_listp;
+static void *next_bp;
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t asize);
-static void *first_fit(size_t asize);
+static void *next_fit(size_t allocated_size);
 static void place(void *bp, size_t asize);
 
 int mm_init(void)
@@ -80,6 +81,7 @@ int mm_init(void)
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
     heap_listp += (2 * WSIZE);
+    next_bp = heap_listp;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -131,17 +133,27 @@ void *mm_malloc(size_t size)
 
 static void *find_fit(size_t allocated_size)
 {
-    return first_fit(allocated_size);
+    return next_fit(allocated_size);
 }
 
-static void *first_fit(size_t allocated_size)
+static void *next_fit(size_t allocated_size)
 {
     void *bp;
 
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    for (bp = next_bp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
         {
+            next_bp = NEXT_BLKP(bp);
+            return bp;
+        }
+    }
+
+    for (bp = heap_listp; bp < next_bp; bp = NEXT_BLKP(bp))
+    {
+        if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
+        {
+            next_bp = NEXT_BLKP(bp);
             return bp;
         }
     }
@@ -192,6 +204,7 @@ static void *coalesce(void *bp)
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
+        next_bp = bp;
     }
 
     else if (!prev_alloc && next_alloc)
@@ -200,6 +213,7 @@ static void *coalesce(void *bp)
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
+        next_bp = PREV_BLKP(bp);
     }
 
     else
@@ -208,6 +222,7 @@ static void *coalesce(void *bp)
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
+        next_bp = PREV_BLKP(bp);
     }
     return bp;
 }
@@ -228,33 +243,3 @@ void *mm_realloc(void *bp, size_t size)
     mm_free(old_bp);
     return new_bp;
 }
-
-// void *mm_realloc(void *bp, size_t size)
-// {
-//     void *old_bp = bp;
-//     void *new_bp = bp;
-//     size_t copy_size;
-
-//     // size가 0인 경우 메모리 반환만 수행
-//     if (size <= 0)
-//     {
-//         mm_free(bp);
-//         return 0;
-//     }
-
-//     // 새로운 메모리 블록 할당하기
-//     new_bp = mm_malloc(size);
-//     if (new_bp == NULL)
-//         return NULL;
-
-//     // 기존 데이터 복사
-//     copy_size = GET(HDRP(old_bp)) - DSIZE;
-//     if (size < copy_size)
-//         copy_size = size;
-//     memcpy(new_bp, old_bp, copy_size);
-
-//     // 이전 메모리 블록 해제
-//     mm_free(old_bp);
-
-//     return new_bp;
-// }
