@@ -64,11 +64,13 @@ team_t team = {
 #define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 
 static void *heap_listp;
+static void *next_fit_pointer;
+
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
-static void *find_fit(size_t asize);
-static void *first_fit(size_t asize);
-static void place(void *bp, size_t asize);
+static void *find_fit(size_t allocated_size);
+static void *first_fit(size_t allocated_size);
+static void place(void *bp, size_t allocated_size);
 
 int mm_init(void)
 {
@@ -131,7 +133,8 @@ void *mm_malloc(size_t size)
 
 static void *find_fit(size_t allocated_size)
 {
-    return first_fit(allocated_size);
+    // return first_fit(allocated_size);
+    return next_fit(allocated_size);
 }
 
 static void *first_fit(size_t allocated_size)
@@ -228,33 +231,3 @@ void *mm_realloc(void *bp, size_t size)
     mm_free(old_bp);
     return new_bp;
 }
-
-// void *mm_realloc(void *bp, size_t size)
-// {
-//     void *old_bp = bp;
-//     void *new_bp = bp;
-//     size_t copy_size;
-
-//     // size가 0인 경우 메모리 반환만 수행
-//     if (size <= 0)
-//     {
-//         mm_free(bp);
-//         return 0;
-//     }
-
-//     // 새로운 메모리 블록 할당하기
-//     new_bp = mm_malloc(size);
-//     if (new_bp == NULL)
-//         return NULL;
-
-//     // 기존 데이터 복사
-//     copy_size = GET(HDRP(old_bp)) - DSIZE;
-//     if (size < copy_size)
-//         copy_size = size;
-//     memcpy(new_bp, old_bp, copy_size);
-
-//     // 이전 메모리 블록 해제
-//     mm_free(old_bp);
-
-//     return new_bp;
-// }
