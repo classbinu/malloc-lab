@@ -138,19 +138,20 @@ static void *find_fit(size_t allocated_size)
 
 static void *best_fit(size_t allocated_size)
 {
-    void *best_fit_bp;
-    size_t best_fit_size = SIZE_MAX;
-    size_t current_block_size;
-
     void *bp;
+    void *best_fit_bp = NULL;
+    size_t best_fragmentation_size = SIZE_MAX;
 
     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
     {
-        current_block_size = GET_SIZE(HDRP(bp));
-        if (!GET_ALLOC(bp) && current_block_size >= allocated_size && current_block_size < best_fit_size)
+        if (!GET_ALLOC(HDRP(bp)) && allocated_size <= GET_SIZE(HDRP(bp)))
         {
-            best_fit_size = current_block_size;
-            best_fit_bp = bp;
+            size_t fragmentation_size = GET_SIZE(HDRP(bp)) - allocated_size;
+            if (fragmentation_size < best_fragmentation_size)
+            {
+                best_fragmentation_size = fragmentation_size;
+                best_fit_bp = bp;
+            }
         }
     }
 
