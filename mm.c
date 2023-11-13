@@ -140,20 +140,20 @@ static void *next_fit(size_t allocated_size)
 {
     void *bp;
 
-    for (bp = next_bp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    for (bp = NEXT_BLKP(next_bp); GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
         {
-            next_bp = NEXT_BLKP(bp);
+            next_bp = bp;
             return bp;
         }
     }
 
-    for (bp = heap_listp; bp < next_bp; bp = NEXT_BLKP(bp))
+    for (bp = heap_listp; bp < NEXT_BLKP(next_bp); bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
         {
-            next_bp = NEXT_BLKP(bp);
+            next_bp = bp;
             return bp;
         }
     }
