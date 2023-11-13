@@ -14,6 +14,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "mm.h"
 #include "memlib.h"
@@ -68,7 +69,7 @@ static void *heap_listp;
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t allocated_size);
-static void *first_fit(size_t allocated_size);
+static void *best_fit(size_t allocated_size);
 static void place(void *bp, size_t allocated_size);
 
 int mm_init(void)
@@ -132,21 +133,28 @@ void *mm_malloc(size_t size)
 
 static void *find_fit(size_t allocated_size)
 {
-    return first_fit(allocated_size);
+    return best_fit(allocated_size);
 }
 
-static void *first_fit(size_t allocated_size)
+static void *best_fit(size_t allocated_size)
 {
+    void *best_fit_bp;
+    size_t best_fit_size = SIZE_MAX;
+    size_t current_block_size;
+
     void *bp;
 
     for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
     {
-        if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
+        current_block_size = GET_SIZE(HDRP(bp));
+        if (!GET_ALLOC(bp) && current_block_size >= allocated_size && current_block_size < best_fit_size)
         {
-            return bp;
+            best_fit_size = current_block_size;
+            best_fit_bp = bp;
         }
     }
-    return NULL;
+
+    return best_fit_bp;
 }
 
 static void place(void *bp, size_t allocated_size)
