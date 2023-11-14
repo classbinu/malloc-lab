@@ -65,7 +65,7 @@ team_t team = {
 #define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 
 static void *heap_listp;
-static void *next_bp;
+static void *recent_bp;
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t asize);
@@ -82,7 +82,7 @@ int mm_init(void)
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
     heap_listp += (2 * WSIZE);
-    next_bp = heap_listp;
+    recent_bp = heap_listp;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -141,20 +141,20 @@ static void *next_fit(size_t allocated_size)
 {
     void *bp;
 
-    for (bp = NEXT_BLKP(next_bp); GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    for (bp = NEXT_BLKP(recent_bp); GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
         {
-            next_bp = bp;
+            recent_bp = bp;
             return bp;
         }
     }
 
-    for (bp = heap_listp; bp < NEXT_BLKP(next_bp); bp = NEXT_BLKP(bp))
+    for (bp = heap_listp; bp < NEXT_BLKP(recent_bp); bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
         {
-            next_bp = bp;
+            recent_bp = bp;
             return bp;
         }
     }
@@ -205,7 +205,7 @@ static void *coalesce(void *bp)
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
-        next_bp = bp;
+        recent_bp = bp;
     }
 
     else if (!prev_alloc && next_alloc)
@@ -214,7 +214,7 @@ static void *coalesce(void *bp)
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
-        next_bp = PREV_BLKP(bp);
+        recent_bp = PREV_BLKP(bp);
     }
 
     else
@@ -223,7 +223,7 @@ static void *coalesce(void *bp)
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
-        next_bp = PREV_BLKP(bp);
+        recent_bp = PREV_BLKP(bp);
     }
     return bp;
 }
