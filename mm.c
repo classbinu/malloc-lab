@@ -57,13 +57,17 @@ team_t team = {
 #define GET_SIZE(p) (GET(p) & ~0x7)
 #define GET_ALLOC(p) (GET(p) & 0x1)
 
-#define HDRP(bp) ((char *)(bp)-WSIZE)
-#define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
+#define HDRP(bp) ((char *)(bp) - (3 * WSIZE))
+#define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - (2 * DSIZE))
 
-#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp)-WSIZE)))
-#define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
+#define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp) - (3 * WSIZE))))
+#define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp) - (2 * DSIZE))))
+
+#define PREDP(bp) ((char *)(bp) - (DSIZE))
+#define SUCCP(bp) ((char *)(bp) - (WSIZE))
 
 static void *heap_listp;
+static void *free_listp = NULL;
 
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
@@ -71,16 +75,21 @@ static void *find_fit(size_t allocated_size);
 static void *first_fit(size_t allocated_size);
 static void place(void *bp, size_t allocated_size);
 
+static void append_free_block(void *bp);
+static void remove_free_block(void *bp);
+
 int mm_init(void)
 {
-    if ((heap_listp = mem_sbrk(4 * WSIZE)) == (void *)-1)
+    if ((heap_listp = mem_sbrk(6 * WSIZE)) == (void *)-1)
         return -1;
 
     PUT(heap_listp, 0);
-    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
-    PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
-    heap_listp += (2 * WSIZE);
+    PUT(heap_listp + (1 * WSIZE), PACK(DSIZE * 2, 1));
+    PUT(heap_listp + (2 * WSIZE), NULL);
+    PUT(heap_listp + (3 * WSIZE), NULL);
+    PUT(heap_listp + (4 * WSIZE), PACK(DSIZE * 2, 1));
+    PUT(heap_listp + (5 * WSIZE), PACK(0, 1));
+    free_listp = heap_listp + DSIZE;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -113,9 +122,9 @@ void *mm_malloc(size_t size)
         return NULL;
 
     if (size <= DSIZE)
-        allocated_size = 2 * DSIZE;
+        allocated_size = 3 * DSIZE;
     else
-        allocated_size = DSIZE * ((size + (DSIZE) + (DSIZE - 1)) / DSIZE);
+        allocated_size = DSIZE * ((size + (2 * DSIZE) + (DSIZE - 1)) / DSIZE);
 
     if ((bp = find_fit(allocated_size)) != NULL)
     {
@@ -130,6 +139,28 @@ void *mm_malloc(size_t size)
     return bp;
 }
 
+void append_free_block(void *bp)
+{
+    PUT(SUCCP(bp), free_listp);
+    PUT(PREDP(bp), NULL);
+    PUT(PREDP(free_listp), bp);
+    free_listp = bp;
+}
+
+void remove_free_block(void *bp)
+{
+    if (bp == free_listp)
+    {
+        PUT(PREDP(SUCCP(bp)), NULL);
+        free_listp = SUCCP(bp);
+    }
+    else
+    {
+        PUT(SUCCP(GET(PREDP(bp))), GET(SUCCP(bp)));
+        PUT(PREDP(GET(SUCCP(bp))), GET(PREDP(bp)));
+    }
+}
+
 static void *find_fit(size_t allocated_size)
 {
     return first_fit(allocated_size);
@@ -139,9 +170,9 @@ static void *first_fit(size_t allocated_size)
 {
     void *bp;
 
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    for (bp = free_listp; GET_ALLOC(HDRP(bp)) != 1; bp = GET(SUCCP(bp)))
     {
-        if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
+        if (allocated_size <= GET_SIZE(HDRP(bp)))
         {
             return bp;
         }
@@ -153,13 +184,15 @@ static void place(void *bp, size_t allocated_size)
 {
     size_t current_size = GET_SIZE(HDRP(bp));
 
-    if ((current_size - allocated_size) >= (2 * DSIZE))
+    remove_free_block(bp);
+    if ((current_size - allocated_size) >= (3 * DSIZE))
     {
         PUT(HDRP(bp), PACK(allocated_size, 1));
         PUT(FTRP(bp), PACK(allocated_size, 1));
         bp = NEXT_BLKP(bp);
         PUT(HDRP(bp), PACK(current_size - allocated_size, 0));
         PUT(FTRP(bp), PACK(current_size - allocated_size, 0));
+        append_free_block(bp);
     }
     else
     {
@@ -171,7 +204,6 @@ static void place(void *bp, size_t allocated_size)
 void mm_free(void *bp)
 {
     size_t size = GET_SIZE(HDRP(bp));
-
     PUT(HDRP(bp), PACK(size, 0));
     PUT(FTRP(bp), PACK(size, 0));
     coalesce(bp);
@@ -190,6 +222,7 @@ static void *coalesce(void *bp)
 
     else if (prev_alloc && !next_alloc)
     {
+        
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
