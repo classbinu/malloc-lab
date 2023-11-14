@@ -232,8 +232,8 @@ static void *coalesce(void *bp)
         remove_free_block(PREV_BLKP(bp));
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
         bp = PREV_BLKP(bp);
-        PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(bp), PACK(size, 0));
+        PUT(FTRP(bp), PACK(size, 0));
     }
 
     else
