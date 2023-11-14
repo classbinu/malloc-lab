@@ -68,11 +68,12 @@ team_t team = {
 
 static void *heap_listp;
 static void *free_listp;
+static void *last_next_fit;
 
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t allocated_size);
-static void *first_fit(size_t allocated_size);
+static void *next_fit(size_t allocated_size);
 static void place(void *bp, size_t allocated_size);
 
 static void append_free_block(void *bp);
@@ -90,6 +91,7 @@ int mm_init(void)
     PUT(heap_listp + (4 * WSIZE), PACK(DSIZE * 2, 1));
     PUT(heap_listp + (5 * WSIZE), PACK(0, 1));
     free_listp = heap_listp + DSIZE;
+    last_next_fit = free_listp;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -163,10 +165,10 @@ void remove_free_block(void *bp)
 
 static void *find_fit(size_t allocated_size)
 {
-    return first_fit(allocated_size);
+    return next_fit(allocated_size);
 }
 
-static void *first_fit(size_t allocated_size)
+static void *next_fit(size_t allocated_size)
 {
     void *bp;
 
