@@ -68,7 +68,7 @@ team_t team = {
 
 static void *heap_listp;
 static void *free_listp;
-static void *last_next_fit;
+static void *last_bp;
 
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
@@ -91,7 +91,7 @@ int mm_init(void)
     PUT(heap_listp + (4 * WSIZE), PACK(DSIZE * 2, 1));
     PUT(heap_listp + (5 * WSIZE), PACK(0, 1));
     free_listp = heap_listp + DSIZE;
-    last_next_fit = free_listp;
+    last_bp = free_listp;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -172,13 +172,24 @@ static void *next_fit(size_t allocated_size)
 {
     void *bp;
 
-    for (bp = free_listp; GET_ALLOC(HDRP(bp)) != 1; bp = SUCC_FREEP(bp))
+    for (bp = last_bp; GET_ALLOC(HDRP(bp)) != 1; bp = SUCC_FREEP(bp))
     {
         if (allocated_size <= GET_SIZE(HDRP(bp)))
         {
+            last_bp = bp;
             return bp;
         }
     }
+
+    for (bp = free_listp; GET_ALLOC(HDRP(bp)) != 1 && bp != last_bp; bp = SUCC_FREEP(bp))
+    {
+        if (allocated_size <= GET_SIZE(HDRP(bp)))
+        {
+            last_bp = bp;
+            return bp;
+        }
+    }
+
     return NULL;
 }
 
@@ -248,6 +259,7 @@ static void *coalesce(void *bp)
         bp = PREV_BLKP(bp);
     }
     append_free_block(bp);
+    last_bp = bp;
     return bp;
 }
 
