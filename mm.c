@@ -59,18 +59,19 @@ team_t team = {
 #define GET_ALLOC(p) (GET(p) & 0x1)
 
 #define HDRP(bp) ((char *)(bp)-WSIZE)
+
 #define FTRP(bp) ((char *)(bp) + GET_SIZE(HDRP(bp)) - DSIZE)
 
 #define NEXT_BLKP(bp) ((char *)(bp) + GET_SIZE(((char *)(bp)-WSIZE)))
 #define PREV_BLKP(bp) ((char *)(bp)-GET_SIZE(((char *)(bp)-DSIZE)))
 
 static void *heap_listp;
-
+static void *recent_bp;
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
-static void *find_fit(size_t allocated_size);
-static void *worst_fit(size_t allocated_size);
-static void place(void *bp, size_t allocated_size);
+static void *find_fit(size_t asize);
+static void *next_fit(size_t allocated_size);
+static void place(void *bp, size_t asize);
 
 int mm_init(void)
 {
@@ -82,6 +83,7 @@ int mm_init(void)
     PUT(heap_listp + (2 * WSIZE), PACK(DSIZE, 1));
     PUT(heap_listp + (3 * WSIZE), PACK(0, 1));
     heap_listp += (2 * WSIZE);
+    recent_bp = heap_listp;
 
     if (extend_heap(CHUNKSIZE / WSIZE) == NULL)
         return -1;
@@ -133,25 +135,30 @@ void *mm_malloc(size_t size)
 
 static void *find_fit(size_t allocated_size)
 {
-    return worst_fit(allocated_size);
+    return next_fit(allocated_size);
 }
 
-static void *worst_fit(size_t allocated_size)
+static void *next_fit(size_t allocated_size)
 {
     void *bp;
     void *worst_fit_bp = NULL;
     size_t worst_fragmentation_size = 0;
 
-    for (bp = heap_listp; GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    for (bp = NEXT_BLKP(recent_bp); GET_SIZE(HDRP(bp)) > 0; bp = NEXT_BLKP(bp))
+    {
+        if (!GET_ALLOC(HDRP(bp)) && (allocated_size <= GET_SIZE(HDRP(bp))))
+        {
+            recent_bp = bp;
+            return bp;
+        }
+    }
+
+    for (bp = heap_listp; bp < NEXT_BLKP(recent_bp); bp = NEXT_BLKP(bp))
     {
         if (!GET_ALLOC(HDRP(bp)) && allocated_size <= GET_SIZE(HDRP(bp)))
         {
-            size_t fragmentation_size = GET_SIZE(HDRP(bp)) - allocated_size;
-            if (fragmentation_size > worst_fragmentation_size)
-            {
-                worst_fragmentation_size = fragmentation_size;
-                worst_fit_bp = bp;
-            }
+            recent_bp = bp;
+            return bp;
         }
     }
 
@@ -202,6 +209,7 @@ static void *coalesce(void *bp)
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
+        recent_bp = bp;
     }
 
     else if (!prev_alloc && next_alloc)
@@ -210,6 +218,7 @@ static void *coalesce(void *bp)
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
+        recent_bp = PREV_BLKP(bp);
     }
 
     else
@@ -218,6 +227,7 @@ static void *coalesce(void *bp)
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
+        recent_bp = PREV_BLKP(bp);
     }
     return bp;
 }
