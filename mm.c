@@ -201,33 +201,47 @@ static void *coalesce(void *bp)
 
     if (prev_alloc && next_alloc)
     {
+        if (recent_bp == bp)
+        {
+            recent_bp = PREV_BLKP(bp);
+        }
         return bp;
     }
 
     else if (prev_alloc && !next_alloc)
     {
+        if (recent_bp == bp || recent_bp == NEXT_BLKP(bp))
+        {
+            recent_bp = PREV_BLKP(PREV_BLKP(bp));
+        }
         size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
         PUT(HDRP(bp), PACK(size, 0));
         PUT(FTRP(bp), PACK(size, 0));
-        recent_bp = bp;
     }
 
     else if (!prev_alloc && next_alloc)
     {
+        if (recent_bp == bp)
+        {
+            recent_bp = PREV_BLKP(PREV_BLKP(bp));
+        }
+
         size += GET_SIZE(HDRP(PREV_BLKP(bp)));
         PUT(FTRP(bp), PACK(size, 0));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
-        recent_bp = PREV_BLKP(bp);
     }
 
     else
     {
+        if (recent_bp == bp || recent_bp == NEXT_BLKP(bp))
+        {
+            recent_bp = PREV_BLKP(PREV_BLKP(bp));
+        }
         size += GET_SIZE(HDRP(PREV_BLKP(bp))) + GET_SIZE(FTRP(NEXT_BLKP(bp)));
         PUT(HDRP(PREV_BLKP(bp)), PACK(size, 0));
         PUT(FTRP(NEXT_BLKP(bp)), PACK(size, 0));
         bp = PREV_BLKP(bp);
-        recent_bp = PREV_BLKP(bp);
     }
     return bp;
 }
