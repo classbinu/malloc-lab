@@ -3,14 +3,14 @@
 ## 구현 결과
 |List Type|Allocation|Utilization(자원 활용도)|throughput(시간당 처리율)|Sum/100|Rank|
 |:--:|:--:|:--:|:--:|:--:|:--:|
-|implicit|First Fit|44|8|53|6️⃣|
-|implicit|Next Fit|43|40|84|🥇|
-|implicit|Best Fit|45|8|53|5️⃣|
-|implicit|Worst Fit|41|8|49|7️⃣|
-|explicit|First Fit|42|40|82|🥈|
-|explicit|Next Fit|42|40|82|🥈|
-|explicit|Best Fit|45|26|71|🥉|
-|explicit|Worst Fit|41|25|66|4️⃣|
+|Implicit|First Fit|44|8|53|6️⃣|
+|Implicit|Next Fit|43|40|84|🥇|
+|Implicit|Best Fit|45|8|53|5️⃣|
+|Implicit|Worst Fit|41|8|49|7️⃣|
+|Explicit|First Fit|42|40|82|🥈|
+|Explicit|Next Fit|42|40|82|🥈|
+|Explicit|Best Fit|45|26|71|🥉|
+|Explicit|Worst Fit|41|25|66|4️⃣|
 
 ## 학습 목표
 1. 동적 메모리 할당기(malloc, realloc, free)를 직접 개발한다.
