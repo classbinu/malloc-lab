@@ -1,52 +1,30 @@
-#####################################################################
-# CS:APP Malloc Lab
-# Handout files for students
-#
-# Copyright (c) 2002, R. Bryant and D. O'Hallaron, All rights reserved.
-# May not be used, modified, or copied without permission.
-#
-######################################################################
+# Malloc-lab
 
-***********
-Main Files:
-***********
+## 구현 결과
+|List Type|Allocation|Utilization(자원 활용도)|throughput(시간당 처리율)|Sum/100|Rank|
+|:--:|:--:|:--:|:--:|:--:|:--:|
+|implicit|First Fit|44|8|53|6️⃣|
+|implicit|Next Fit|43|40|84|🥇|
+|implicit|Best Fit|45|8|53|5️⃣|
+|implicit|Worst Fit|41|8|49|7️⃣|
+|explicit|First Fit|42|40|82|🥈|
+|explicit|Next Fit|42|40|82|🥈|
+|explicit|Best Fit|45|26|71|🥉|
+|explicit|Worst Fit|41|25|66|4️⃣|
 
-mm.{c,h}	
-	Your solution malloc package. mm.c is the file that you
-	will be handing in, and is the only file you should modify.
+## 학습 목표
+1. 동적 메모리 할당기(malloc, realloc, free)를 직접 개발한다.
+2. 메모리, 포인터 개념에 익숙해진다.
+   
+## 학습 일정
+(크래프톤 정글 3기 week. 5) 2023/11/09 ~ 16
 
-mdriver.c	
-	The malloc driver that tests your mm.c file
+## 학습 결과
+1. 동적 할당기 개념 이해함.
+2. 묵시적 해제 리스트, 명시적 해제 리스트 개념 이해함.
+3. 4가지의 메모리 할당 전략 이해함.
+4. 묵시적 해제 리스트, 명시적 해제 리스트로 각각 4가지 할당 전략 구현
+   (explicit에서 next fit방식은 사실상 유효한 전략은 아님)
 
-short{1,2}-bal.rep
-	Two tiny tracefiles to help you get started. 
-
-Makefile	
-	Builds the driver
-
-**********************************
-Other support files for the driver
-**********************************
-
-config.h	Configures the malloc lab driver
-fsecs.{c,h}	Wrapper function for the different timer packages
-clock.{c,h}	Routines for accessing the Pentium and Alpha cycle counters
-fcyc.{c,h}	Timer functions based on cycle counters
-ftimer.{c,h}	Timer functions based on interval timers and gettimeofday()
-memlib.{c,h}	Models the heap and sbrk function
-
-*******************************
-Building and running the driver
-*******************************
-To build the driver, type "make" to the shell.
-
-To run the driver on a tiny test trace:
-
-	unix> mdriver -V -f short1-bal.rep
-
-The -V option prints out helpful tracing and summary information.
-
-To get a list of the driver flags:
-
-	unix> mdriver -h
-
+**참고 자료**
+[CMU 카네기멜론대학](http://csapp.cs.cmu.edu/3e/malloclab.pdf)
