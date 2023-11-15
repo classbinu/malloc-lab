@@ -4,7 +4,7 @@
 |List Type|Allocation|Utilization(자원 활용도)|throughput(시간당 처리율)|Sum/100|Rank|
 |:--:|:--:|:--:|:--:|:--:|:--:|
 |Implicit|First Fit|44|8|53|6️⃣|
-|Implicit|Next Fit|43|40|84|🥇|
+|Implicit|Next Fit|44|40|84|🥇|
 |Implicit|Best Fit|45|8|53|5️⃣|
 |Implicit|Worst Fit|41|8|49|7️⃣|
 |Explicit|First Fit|42|40|82|🥈|
