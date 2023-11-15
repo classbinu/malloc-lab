@@ -26,5 +26,5 @@
 4. 묵시적 해제 리스트, 명시적 해제 리스트로 각각 4가지 할당 전략 구현
    (explicit에서 next fit방식은 사실상 유효한 전략은 아님)
 
-**참고 자료**
+## 참고 자료
 [CMU 카네기멜론대학](http://csapp.cs.cmu.edu/3e/malloclab.pdf)
