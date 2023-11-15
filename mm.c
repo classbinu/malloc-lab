@@ -173,7 +173,7 @@ static void *best_fit(size_t allocated_size)
     void *best_fit_bp = NULL;
     size_t best_fragmentation_size = SIZE_MAX;
 
-    for (bp = free_listp; GET_ALLOC(bp) != 1; bp = SUCC_FREEP(bp))
+    for (bp = free_listp; GET_ALLOC(HDRP(bp)) != 1; bp = SUCC_FREEP(bp))
     {
         if (allocated_size <= GET_SIZE(HDRP(bp)))
         {
