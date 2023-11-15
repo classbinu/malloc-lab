@@ -28,3 +28,6 @@
 
 ## 참고 자료
 [CMU 카네기멜론대학](http://csapp.cs.cmu.edu/3e/malloclab.pdf)
+
+## 참고 포스팅
+[[크래프톤 정글 3기] 11/15(수) TIL](https://velog.io/@classbinu/%ED%81%AC%EB%9E%98%ED%94%84%ED%86%A4-%EC%A0%95%EA%B8%80-3%EA%B8%B0-1115%EC%88%98-TIL)
