@@ -73,7 +73,7 @@ static void *free_listp;
 static void *extend_heap(size_t words);
 static void *coalesce(void *bp);
 static void *find_fit(size_t allocated_size);
-static void *best_fit(size_t allocated_size);
+static void *worst_fit(size_t allocated_size);
 static void place(void *bp, size_t allocated_size);
 
 static void append_free_block(void *bp);
@@ -164,29 +164,29 @@ void remove_free_block(void *bp)
 
 static void *find_fit(size_t allocated_size)
 {
-    return best_fit(allocated_size);
+    return worst_fit(allocated_size);
 }
 
-static void *best_fit(size_t allocated_size)
+static void *worst_fit(size_t allocated_size)
 {
     void *bp;
-    void *best_fit_bp = NULL;
-    size_t best_fragmentation_size = SIZE_MAX;
+    void *worst_fit_bp = NULL;
+    size_t worst_fragmentation_size = 0;
 
     for (bp = free_listp; GET_ALLOC(HDRP(bp)) != 1; bp = SUCC_FREEP(bp))
     {
         if (allocated_size <= GET_SIZE(HDRP(bp)))
         {
             size_t fragmentation_size = GET_SIZE(HDRP(bp)) - allocated_size;
-            if (fragmentation_size < best_fragmentation_size)
+            if (fragmentation_size > worst_fragmentation_size)
             {
-                best_fragmentation_size = fragmentation_size;
-                best_fit_bp = bp;
+                worst_fragmentation_size = fragmentation_size;
+                worst_fit_bp = bp;
             }
         }
     }
 
-    return best_fit_bp;
+    return worst_fit_bp;
 }
 
 static void place(void *bp, size_t allocated_size)
